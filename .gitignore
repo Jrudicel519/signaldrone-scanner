@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+scanner_output/
+scanner_v1_backup_before_json.py
+scanner_v1_upload.txt
+.DS_Store
