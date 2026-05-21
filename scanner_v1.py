@@ -532,12 +532,36 @@ async def scan_one_exchange(exchange_settings):
 
 
 def pick_number_one_choice(all_results):
+    """
+    Picks the #1 buy-entry choice.
+
+    Hard rule:
+    The #1 choice MUST have RSI <= MAX_RSI_FOR_ENTRY.
+    This prevents high-RSI coins from becoming #1 just because they have
+    strong volume or momentum.
+
+    Preferred:
+    Strict buy entries first.
+    Then ideal RSI zone entries.
+    Then any low-RSI entry.
+    If nothing has low RSI, return None.
+    """
     if not all_results:
         return None
 
-    strict_entries = [
+    # Hard filter: do not allow high-RSI coins to become #1.
+    low_rsi_results = [
         r for r in all_results
-        if r["strict_buy_entry"]
+        if r.get("rsi", 999) <= MAX_RSI_FOR_ENTRY
+    ]
+
+    if not low_rsi_results:
+        return None
+
+    # Best case: strict buy-entry setup.
+    strict_entries = [
+        r for r in low_rsi_results
+        if r.get("strict_buy_entry")
     ]
 
     if strict_entries:
@@ -547,8 +571,22 @@ def pick_number_one_choice(all_results):
             reverse=True
         )[0]
 
+    # Second best: RSI in the ideal 25-35 buy zone.
+    ideal_rsi_entries = [
+        r for r in low_rsi_results
+        if IDEAL_RSI_LOW <= r.get("rsi", 999) <= IDEAL_RSI_HIGH
+    ]
+
+    if ideal_rsi_entries:
+        return sorted(
+            ideal_rsi_entries,
+            key=lambda x: x["entry_score"],
+            reverse=True
+        )[0]
+
+    # Last fallback: RSI is still low enough, but not perfect.
     return sorted(
-        all_results,
+        low_rsi_results,
         key=lambda x: x["entry_score"],
         reverse=True
     )[0]
