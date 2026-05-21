@@ -2,3 +2,5 @@ ccxt
 pandas
 ta
 tabulate
+fastapi
+uvicorn
